@@ -1,0 +1,339 @@
+<html>
+
+<head>
+    <title>Street Fighter 2</title>
+    <link rel="stylesheet" href="css.css">
+</head>
+
+<body>
+    <canvas id='myCanvas' width='392' height='248'></canvas>
+    <script>
+        let canvas = document.getElementById('myCanvas');
+        let ctx = canvas.getContext('2d');
+        document.addEventListener('keydown', keyDownHandler, false)
+        document.addEventListener('keyup', keyUpHandler, false)
+        // main background images
+        let ground = new Image();
+        ground.src = 'ground.png';
+        let background = new Image();
+        background.src = 'background.png';
+        let ship = new Image();
+        ship.src = 'ship.png';
+        // people and flag images
+        let blueSuitImg = new Image();
+        let blueSuit = [
+            'blue2.png',
+            'blue3.png',
+            'blue2.png',
+            'blue1.png',
+            'blue2.png',
+            'blue3.png',
+            'blue2.png',
+            'blue1.png',
+            'blue2.png',
+        ]
+        let greenSuitImg = new Image();
+        let greenSuit = [
+            'green1.png',
+            'green2.png',
+            'green2.png',
+            'green1.png',
+            'green2.png',
+            'green2.png',
+            'green1.png',
+            'green2.png',
+            'green2.png',
+        ]
+        let purpleSuitImg = new Image();
+        let purpleSuit = [
+            'purple1.png',
+            'purple2.png',
+            'purple3.png',
+            'purple2.png',
+            'purple1.png',
+            'purple2.png',
+            'purple3.png',
+            'purple2.png',
+            'purple1.png',
+        ]
+        let flagImg = new Image();
+        let flag = [
+            'flag1.png',
+            'flag2.png',
+            'flag3.png',
+            'flag2.png',
+            'flag1.png',
+            'flag2.png',
+            'flag3.png',
+            'flag2.png',
+            'flag1.png',
+        ]
+
+        let frameCounter = 0;
+        let frame = 0;
+        let frameDelta = 1;
+
+        let distanceFromCenter = 0;
+        // bouncing ship
+        let shipBobHeight = 2;
+        let bobHeightArray = [2, 4, 6, 4, 2, 4, 6, 4, 2];
+        let shipDistanceFromCenter = distanceFromCenter + ((100 + distanceFromCenter) / 200) * 20;
+        //key press false
+        let leftPressed = false;
+        let rightPressed = false;
+        let lowKick = false;
+        let lowPunch = false;
+        let highKick = false;
+        let highPunch = false;
+        let medPunch = false;
+        let medKick = false;
+        // idle state 
+        let player1State = {
+            state: 'idle',
+            frames: 4,
+            autoRepeat: true,
+            nextState: 'idle'
+        }
+        //ken images
+        let player1Img = new Image();
+        player1Img.src = 'ken.png';
+
+        let kenIdle = [{ x: 0, y: 0, w: 50, h: 100 }, { x: 50, y: 0, w: 50, h: 100 }, { x: 100, y: 0, w: 50, h: 100 }, { x: 150, y: 0, w: 50, h: 100 }]
+        let kenWalking = [{ x: 202, y: 0, w: 50, h: 100 }, { x: 251, y: 0, w: 50, h: 100 }, { x: 301, y: 0, w: 50, h: 100 }, { x: 351, y: 0, w: 50, h: 100 }, { x: 400, y: 0, w: 48, h: 100 }]
+        let kenLowMedP = [{ x: 0, y: 116, w: 50, h: 100 }, { x: 50, y: 116, w: 65, h: 100 }, { x: 116, y: 116, w: 50, h: 100 }]
+        let kenHP = [{ x: 167, y: 116, w: 50, h: 100 }, { x: 217, y: 116, w: 56, h: 100 }, { x: 273, y: 116, w: 77, h: 100 },{ x: 350, y: 116, w: 60, h: 100 }, { x: 410, y: 116, w: 50, h: 100 }]
+        let kenLowMedK = [{ x: 0, y: 246, w: 54, h: 100 }, { x: 56, y: 246, w: 73, h: 100 }, { x: 129, y: 246, w: 58, h: 100 }]
+        let kenHK = [{ x: 190, y: 246, w: 50, h: 100 }, { x: 240, y: 246, w: 61, h: 100 }, { x: 302, y: 246, w: 74, h: 100 },{ x: 376, y: 246, w: 67, h: 100 }, { x: 443, y: 246, w: 51, h: 100 }]
+        let playerFrameCount = 0;
+        let playerFrame = 0;
+        let player1X = 150;
+        let player1Y = 100;
+        //Handlers
+        function keyDownHandler(e) {
+            if (e.keyCode == 37) {
+                leftPressed = true;
+            } else if (e.keyCode == 39) {
+                rightPressed = true;
+            } else if (e.keyCode == 38) {
+                upPressed = true;
+            } else if (e.keyCode == 40) {
+                downPressed = true;
+            } else if (e.keyCode == 97) {
+                lowPunch = true;
+            } else if (e.keyCode == 98) {
+                medPunch = true;
+            } else if (e.keyCode == 99) {
+                highPunch = true;
+            } else if (e.keyCode == 100) {
+                lowKick = true;
+            } else if (e.keyCode == 101) {
+                medKick = true;
+            } else if (e.keyCode == 102) {
+                highKick = true;
+            }
+        }
+
+        function keyUpHandler(e) {
+            if (e.keyCode == 37) {
+                leftPressed = false;
+            } else if (e.keyCode == 39) {
+                rightPressed = false;
+            } else if (e.keyCode == 38) {
+                upPressed = false;
+            } else if (e.keyCode == 40) {
+                downPressed = false;
+            } else if (e.keyCode == 97) {
+                lowPunch = false;
+            } else if (e.keyCode == 98) {
+                medPunch = false;
+            } else if (e.keyCode == 99) {
+                highPunch = false;
+            } else if (e.keyCode == 100) {
+                lowKick = false;
+            } else if (e.keyCode == 101) {
+                medKick = false;
+            } else if (e.keyCode == 102) {
+                highKick = false;
+            }
+        }
+
+        function controls() {
+            if (leftPressed) {
+                if (distanceFromCenter - 1 > -127) {
+                    distanceFromCenter--;
+                }
+                if (player1X >= 40 && distanceFromCenter == -126) {
+                    player1X--;
+                }
+                if (player1State.state.localeCompare('idle') == 0) {
+                    player1State = {state: 'walking',frames: 5,autoRepeat: true,nextState: 'idle'}
+                }
+            }else if (rightPressed) {
+                if (distanceFromCenter + 1 < 128) {
+                    distanceFromCenter++;
+                }
+                if (player1X <= 300 && distanceFromCenter == 127) {
+                    player1X++;
+                }
+                if (player1State.state.localeCompare('idle') == 0) {
+                    player1State = {state: 'walking',frames: 5,autoRepeat: true,nextState: 'idle'}
+                }
+            }else if (lowKick || medKick){
+                lowKick = false;
+                medKick = false;
+                if (player1State.state.localeCompare('idle') == 0) {
+                    player1State = {state: 'lowMedK',frames: 3,autoRepeat: false,nextState: 'idle'}
+                    playerFrame = 0;
+                }
+            }else if (highKick){
+                highKick = false;
+                if (player1State.state.localeCompare('idle') == 0) {
+                    player1State = {state: 'highK',frames: 5,autoRepeat: false,nextState: 'idle'}
+                    playerFrame = 0;
+                }
+            }
+            else if (lowPunch || medPunch){
+                lowPunch = false;
+                medPunch = false;
+                if (player1State.state.localeCompare('idle') == 0) {
+                    player1State = {state: 'lowMedP',frames: 3,autoRepeat: false,nextState: 'idle'}
+                    playerFrame = 0;
+                }
+            }else if (highPunch){
+                highPunch = false;
+                if (player1State.state.localeCompare('idle') == 0) {
+                    player1State = {state: 'highP',frames: 5,autoRepeat: false,nextState: 'idle'} 
+                    playerFrame = 0;
+                }
+            } else if(!rightPressed && !leftPressed && !player1State.state.localeCompare('lowMedP') == 0 && !player1State.state.localeCompare('highP') == 0 && !player1State.state.localeCompare('lowMedK') == 0 && !player1State.state.localeCompare('highK') == 0) {
+                player1State = {state: 'idle',frames: 4,autoRepeat: true,nextState: 'idle'}
+                if (playerFrame >= player1State.frames) {
+                    playerFrame = 0;
+                }
+            }
+        }
+
+        function drawEnvironment() {
+            ctx.drawImage(
+                background,
+                184 + distanceFromCenter,
+                0,
+                392,
+                196,
+                0,
+                0,
+                392,
+                196
+            )
+            ctx.drawImage(
+                ship,
+                130 + shipDistanceFromCenter,
+                5 + shipBobHeight,
+                392,
+                183,
+                0,
+                0,
+                392,
+                200
+            )
+            ctx.drawImage(
+                ground,
+                260 + distanceFromCenter,
+                0,
+                392,
+                72,
+                0,
+                176,
+                392,
+                72
+            )
+
+            if (frameCounter % 20 == 0) {
+                frame += frameDelta;
+                if (frame == 8 || frame == 0) {
+                    frameDelta *= -1;
+                }
+            }
+
+            flagImg.src = flag[frame]
+            ctx.drawImage(flagImg, 376 - distanceFromCenter, 20)
+            shipBobHeight = bobHeightArray[frame];
+            blueSuitImg.src = blueSuit[frame];
+            ctx.drawImage(
+                blueSuitImg,
+                158 - shipDistanceFromCenter,
+                99 - shipBobHeight,
+                48,
+                62
+            )
+
+            purpleSuitImg.src = purpleSuit[frame];
+            ctx.drawImage(
+                purpleSuitImg,
+                0 - shipDistanceFromCenter,
+                24 - shipBobHeight,
+                48,
+                32
+            )
+
+            greenSuitImg.src = greenSuit[frame]
+            ctx.drawImage(
+                greenSuitImg,
+                93 - shipDistanceFromCenter,
+                109 - shipBobHeight,
+                32,
+                61
+            )
+            frameCounter++;
+        }
+
+        function drawChar1() {
+            switch (player1State.state) {
+                case 'walking':
+                ctx.drawImage(player1Img, kenWalking[playerFrame].x, kenWalking[playerFrame].y, kenWalking[playerFrame].w, kenWalking[playerFrame].h, player1X, player1Y, kenWalking[playerFrame].w, kenWalking[playerFrame].h)
+                    break;
+                case 'lowMedK':
+                ctx.drawImage(player1Img, kenLowMedK[playerFrame].x, kenLowMedK[playerFrame].y, kenLowMedK[playerFrame].w, kenLowMedK[playerFrame].h, player1X, player1Y, kenLowMedK[playerFrame].w, kenLowMedK[playerFrame].h)
+                    break;
+                case 'highK':
+                ctx.drawImage(player1Img, kenHK[playerFrame].x, kenHK[playerFrame].y, kenHK[playerFrame].w, kenHK[playerFrame].h, player1X, player1Y, kenHK[playerFrame].w, kenHK[playerFrame].h)
+                    break;
+                case 'lowMedP':
+                ctx.drawImage(player1Img, kenLowMedP[playerFrame].x, kenLowMedP[playerFrame].y, kenLowMedP[playerFrame].w, kenLowMedP[playerFrame].h, player1X, player1Y, kenLowMedP[playerFrame].w, kenLowMedP[playerFrame].h)
+                    break;
+                case 'highP':
+                ctx.drawImage(player1Img, kenHP[playerFrame].x, kenHP[playerFrame].y, kenHP[playerFrame].w, kenHP[playerFrame].h, player1X, player1Y, kenHP[playerFrame].w, kenHP[playerFrame].h)
+                    break;
+                default:
+                    ctx.drawImage(player1Img, kenIdle[playerFrame].x, kenIdle[playerFrame].y, kenIdle[playerFrame].w, kenIdle[playerFrame].h, player1X, player1Y, kenIdle[playerFrame].w, kenIdle[playerFrame].h)
+                    break;
+            }
+            playerFrameCount++;
+            if (playerFrameCount % 10 == 0) {
+                playerFrame++;
+            }
+            if (playerFrame >= player1State.frames && player1State.autoRepeat) {
+                playerFrameCount = 0;
+                playerFrame = 0;
+            }
+            else if (playerFrame >= player1State.frames && !player1State.autoRepeat) {
+                playerFrameCount = 0;
+                playerFrame = 0;
+                if (player1State.nextState.localeCompare('idle') == 0) {
+                    player1State = {state: 'idle',frames: 4,autoRepeat: true,nextState: 'idle'}
+                }
+            }
+        }
+
+        function gameLoop() {
+            shipDistanceFromCenter = distanceFromCenter + ((100 + distanceFromCenter) / 200) * 20;
+            drawEnvironment()
+            controls()
+            drawChar1()
+        }
+
+        setInterval(gameLoop, 10)
+    </script>
+</body>
+
+</html>
